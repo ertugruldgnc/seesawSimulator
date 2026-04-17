@@ -1,16 +1,21 @@
+/* Media */
 const weightSound = new Audio('audio/weightSound.mp3');
 
+/* Html Elements */
 const leftSideWeightStat = document.querySelector("#leftSideWeight p");
 const rightSideWeightStat = document.querySelector("#rightSideWeight p");
 const nextWeightStat = document.querySelector("#nextWeight p");
 const angleStat = document.querySelector("#angle p");
 const seesaw = document.querySelector("#seesaw");
 const beam = document.querySelector("#beam");
+const resetBtn = document.querySelector("#resetBtn");
 const muteBtn = document.querySelector("#muteBtn");
 
+/* Variables */
 let leftSideTorque = 0;
 let rightSideTorque = 0;
 let weightData = {};
+let weights = [];
 let leftSide = [];
 let rightSide = [];
 let mute = false;
@@ -32,6 +37,7 @@ const weightColors = [
     "DarkViolet"
 ];
 
+/* Button Activator */
 function toggle(button,param){
 
     if(param === "active"){
@@ -45,6 +51,7 @@ function toggle(button,param){
     }
 }
 
+/* Random Weight Selector */
 function randomlyWeight(){
 
     nextWeight = Math.round(Math.random() * 9 + 1);
@@ -53,6 +60,7 @@ function randomlyWeight(){
 
 }
 
+/* Display Stats */
 function displayStats() {
     if(position < 0){
         leftSideWeight += nextWeight;
@@ -63,8 +71,8 @@ function displayStats() {
     rightSideWeightStat.textContent = `${rightSideWeight} kg`;
 }
 
-randomlyWeight();
 
+/* Mouse Positioon */
 beam.addEventListener("mousemove", (event) => {
 
     let beamLocation = beam.getBoundingClientRect();
@@ -75,6 +83,7 @@ beam.addEventListener("mousemove", (event) => {
 
 });
 
+/* Put Weight */
 beam.addEventListener("click", () => {
 
     const weight = document.createElement("div");
@@ -98,7 +107,7 @@ beam.addEventListener("click", () => {
     beam.appendChild(weight);
     displayStats();
     calculateTorque();
-    bameMovement();
+    beamMovement();
 
     requestAnimationFrame(() => {
 
@@ -110,6 +119,8 @@ beam.addEventListener("click", () => {
 
 });
 
+
+/* Mute */
 muteBtn.addEventListener("click", () => {
 
     mute = !mute;
@@ -126,7 +137,38 @@ muteBtn.addEventListener("click", () => {
 
 });
 
+/* Reset Everything */
+resetBtn.addEventListener("click", () => {
+
+    leftSideWeight = 0;
+    rightSideWeight = 0;
+    leftSide = [];
+    rightSide = [];
+    leftSideTorque = 0;
+    rightSideTorque = 0;
+
+    leftSideWeightStat.textContent = "0 kg";
+    rightSideWeightStat.textContent = "0 kg";
+    angleStat.textContent = "0°";
+
+    beam.style.transform = "translateX(-50%)";
+
+    localStorage.clear();
+
+    document.querySelectorAll(".weight").forEach(item => {
+        item.remove();
+    });
+
+    randomlyWeight();
+
+});
+
+/* Save To Local Storage */
 function saveWeight(){
+
+    weights.push(weightData);
+
+    localStorage.setItem("weights", JSON.stringify(weights))
 
     if(weightData.position < 0){
 
@@ -137,8 +179,11 @@ function saveWeight(){
         rightSide.push(weightData);
 
     }
+
 }
 
+
+/* Torque Calculation */
 function calculateTorque(){
 
     leftSideTorque = 0;
@@ -146,18 +191,19 @@ function calculateTorque(){
 
     leftSide.forEach(item => {
 
-        leftSideTorque += Object.values(item)[0] * Math.abs(Object.values(item)[1]);
+        leftSideTorque += item.kg * Math.abs(item.position);
 
     });
 
     rightSide.forEach(item => {
 
-        rightSideTorque += Object.values(item)[0] * Object.values(item)[1];
+        rightSideTorque += item.kg * item.position;
 
     });
 }
 
-function bameMovement() {
+/* Beam Movement */
+function beamMovement() {
 
     const torqueDiff = Math.abs(leftSideTorque - rightSideTorque);
     const rotationAngle = Math.min(torqueDiff, 30);
@@ -178,4 +224,48 @@ function bameMovement() {
         beam.style.transform = `translateX(-50%) rotate(-${rotationAngle}deg)`;
         
     }
+}
+
+/* Load From Local Storage */
+function loadWeights(){
+
+    weights = JSON.parse(localStorage.getItem("weights"));
+
+    weights.forEach(item => {
+        const weight = document.createElement("div");
+        weight.textContent = item.kg;
+        weight.className = "weight";
+        weight.style.left = `calc(50% + (${item.position * 50}%))`;
+        weight.style.bottom = "16px";
+        weight.style.height = `${(item.kg*3)+50}px`;
+        weight.style.width = `${(item.kg*3)+50}px`;
+        weight.style.backgroundColor = weightColors[item.kg - 1];
+
+        beam.appendChild(weight);
+
+        if (item.position < 0) {
+
+            leftSide.push(item);
+            leftSideWeight += item.kg;
+
+        } else if (item.position > 0) {
+
+            rightSide.push(item);
+            rightSideWeight += item.kg;
+
+        }
+    });
+
+    displayStats();
+    calculateTorque();
+    beamMovement();
+
+}
+
+randomlyWeight();
+
+if (localStorage.getItem("weights") !== null) {
+
+    loadWeights();
+
 }
