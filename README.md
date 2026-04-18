@@ -7,7 +7,7 @@ A physics-based interactive seesaw simulation built with JavaScript.
 
 ## Live Demo
 
-[Live Demo](https://ertugruldgnc.github.io/seesaw-simulator/) | [Project Video](#)
+[Live Demo](https://ertugruldgnc.github.io/seesaw-simulator/) | [Project Video](https://youtu.be/b1ROkVihOhM)
 
 
 ## 📋 Features
